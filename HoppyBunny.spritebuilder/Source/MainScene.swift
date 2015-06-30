@@ -42,6 +42,10 @@ class MainScene: CCNode, CCPhysicsCollisionDelegate
     // gameOver properity
     var gameOver = false
     
+    // score
+    var points : NSInteger = 0
+    weak var scoreLabel : CCLabelTTF!
+    
     // code connection
     func didLoadFromCCB()
     {
@@ -85,9 +89,17 @@ class MainScene: CCNode, CCPhysicsCollisionDelegate
         obstacles.append(obstacle)
     }
     
-    // collision
+    // collision with obstacles
     func ccPhysicsCollisionBegin(pair: CCPhysicsCollisionPair!, hero: CCNode!, level: CCNode!) -> Bool {
         triggerGameOver()
+        return true
+    }
+    
+    // collision with goal
+    func ccPhysicsCollisionBegin(pair: CCPhysicsCollisionPair!, hero nodeA: CCNode!, goal: CCNode!) -> Bool {
+        goal.removeFromParent()
+        points++
+        scoreLabel.string = String(points)
         return true
     }
     
@@ -155,6 +167,15 @@ class MainScene: CCNode, CCPhysicsCollisionDelegate
         
         // updating the physics node
         gamePhysicsNode.position = ccp(gamePhysicsNode.position.x - scrollSpeed * CGFloat(delta), gamePhysicsNode.position.y)
+        
+        // to get rid of black line between sprites after converting to smart sprite sheet
+        // rouding coordinates
+        // ensures the position is on pixel boundaries, preventing the subpixel rendering artifacts above
+        // gamePhysicsNode.position = ccp(round(gamePhysicsNode.position.x), round(gamePhysicsNode.position.y))
+        // round but for Retina pixel boundries
+        let scale = CCDirector.sharedDirector().contentScaleFactor
+        gamePhysicsNode.position = ccp(round(gamePhysicsNode.position.x * scale) / scale, round(gamePhysicsNode.position.y * scale) / scale)
+        hero.position = ccp(round(hero.position.x * scale) / scale, round(hero.position.y * scale) / scale)
         
         // loop the ground whenever a ground image was moved entirely outside the screen
         for ground in grounds
