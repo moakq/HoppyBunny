@@ -8,20 +8,32 @@ class MainScene: CCNode {
     // code connection for physics node
     weak var gamePhysicsNode : CCPhysicsNode!
     
+    // keep track of time
+    var sinceTouch : CCTime = 0
+    
+    // scroll speed of bunny
+    var scrollSpeed : CGFloat = 80
+    
     // code connection for ground1
     weak var ground1 : CCSprite!
     
     // code connection for ground2
     weak var ground2: CCSprite!
     
+    // code connection to obstacles layer
+     weak var obstaclesLayer : CCNode!
+    
     // initializing an empty array to store the grounds
     var grounds = [CCSprite] ()
     
-    // keep track of time
-    var sinceTouch : CCTime = 0
+    // code connection to obstacles
+    var obstacles : [CCNode] = []
     
-    // scroll speed of bunny
-    var scrollSpeed : CGFloat = 80
+    // first obstacle position
+    let firstObstaclePosition : CGFloat = 280
+    
+    // distance between obstacles
+    let distanceBetweenObstacles : CGFloat = 160
     
     // code connection
     func didLoadFromCCB()
@@ -29,6 +41,12 @@ class MainScene: CCNode {
         userInteractionEnabled = true
         grounds.append(ground1)
         grounds.append(ground2)
+        
+        // spawn 3 obstacles initially
+        for i in 0...2
+        {
+            spawnNewObstacle()
+        }
     }
     
     // enable touch events
@@ -36,6 +54,23 @@ class MainScene: CCNode {
         hero.physicsBody.applyImpulse(ccp(0, 400))
         hero.physicsBody.applyAngularImpulse(10000)
         sinceTouch = 0
+    }
+    
+    // function controlling obstacles
+    func spawnNewObstacle()
+    {
+        var prevObstaclePos = firstObstaclePosition
+        if obstacles.count > 0
+        {
+            prevObstaclePos = obstacles.last!.position.x
+        }
+        
+        // create and add a new obstacle
+        let obstacle = CCBReader.load("Obstacle") as! Obstacle
+        obstacle.position = ccp(prevObstaclePos + distanceBetweenObstacles, 0)
+        obstacle.setupRandomPosition() 
+        obstaclesLayer.addChild(obstacle)
+        obstacles.append(obstacle)
     }
     
     // update method, called every frame in Cocos2D
@@ -86,6 +121,24 @@ class MainScene: CCNode {
             {
                 ground.position = ccp(ground.position.x + ground.contentSize.width * 2, ground.position.y)
             }
+        }
+        
+        // add endless obstacles
+        for obstacle in obstacles.reverse()
+        {
+            let obstacleWorldPosition = gamePhysicsNode.convertToWorldSpace(obstacle.position)
+            let obstacleScreenPosition = convertToNodeSpace(obstacleWorldPosition)
+            
+            // obstacle moved past left side of screen?
+            if obstacleScreenPosition.x < (-obstacle.contentSize.width)
+            {
+                obstacle.removeFromParent()
+                obstacles.removeAtIndex(find(obstacles, obstacle)!)
+                
+                // for each removed obstacle, add a new one
+                spawnNewObstacle()
+            }
+            
         }
     }
 }
