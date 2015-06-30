@@ -26,5 +26,10 @@ class Obstacle : CCNode
         bottomCarrot.position = ccp(bottomCarrot.position.x, topCarrot.position.y + carrotDistance)
     }
     
+    func didLoadFromCCB() {
+        topCarrot.physicsBody.sensor = true
+        bottomCarrot.physicsBody.sensor = true
+    }
+
     
 }

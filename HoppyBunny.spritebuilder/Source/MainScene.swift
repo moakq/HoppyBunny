@@ -1,6 +1,7 @@
 import Foundation
 
-class MainScene: CCNode {
+class MainScene: CCNode, CCPhysicsCollisionDelegate
+{
     
     // connecting hero
     weak var hero : CCSprite!
@@ -23,6 +24,9 @@ class MainScene: CCNode {
     // code connection to obstacles layer
      weak var obstaclesLayer : CCNode!
     
+    // code connection for button
+    weak var restartButton : CCNode!
+    
     // initializing an empty array to store the grounds
     var grounds = [CCSprite] ()
     
@@ -34,6 +38,9 @@ class MainScene: CCNode {
     
     // distance between obstacles
     let distanceBetweenObstacles : CGFloat = 160
+    
+    // gameOver properity
+    var gameOver = false
     
     // code connection
     func didLoadFromCCB()
@@ -47,13 +54,18 @@ class MainScene: CCNode {
         {
             spawnNewObstacle()
         }
+        
+        gamePhysicsNode.collisionDelegate = self
     }
     
     // enable touch events
     override func touchBegan(touch: CCTouch!, withEvent event: CCTouchEvent!) {
-        hero.physicsBody.applyImpulse(ccp(0, 400))
-        hero.physicsBody.applyAngularImpulse(10000)
-        sinceTouch = 0
+        if (gameOver == false)
+        {
+            hero.physicsBody.applyImpulse(ccp(0, 400))
+            hero.physicsBody.applyAngularImpulse(10000)
+            sinceTouch = 0
+        }
     }
     
     // function controlling obstacles
@@ -71,6 +83,41 @@ class MainScene: CCNode {
         obstacle.setupRandomPosition() 
         obstaclesLayer.addChild(obstacle)
         obstacles.append(obstacle)
+    }
+    
+    // collision
+    func ccPhysicsCollisionBegin(pair: CCPhysicsCollisionPair!, hero: CCNode!, level: CCNode!) -> Bool {
+        triggerGameOver()
+        return true
+    }
+    
+    
+    // restart method
+    func restart()
+    {
+        let scene = CCBReader.loadAsScene("MainScene")
+        CCDirector.sharedDirector().presentScene(scene)
+    }
+
+    // triggering game over
+    func triggerGameOver()
+    {
+        if (gameOver == false)
+        {
+            gameOver = true
+            restartButton.visible = true
+            scrollSpeed = 0
+            hero.rotation = 90
+            hero.physicsBody.allowsRotation = false
+            
+            // just in case
+            hero.stopAllActions()
+            
+            let move = CCActionEaseBounceOut(action: CCActionMoveBy(duration: 0.2, position: ccp(0, 4)))
+            let moveBack = CCActionEaseBounceOut(action: move.reverse())
+            let shakeSequence = CCActionSequence(array: [move, moveBack])
+            runAction(shakeSequence)
+        }
     }
     
     // update method, called every frame in Cocos2D
